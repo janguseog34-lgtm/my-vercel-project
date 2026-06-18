@@ -307,96 +307,123 @@ async function main() {
     },
   });
 
-  await prisma.menuItem.upsert({
-    where: {
-      restaurantId_name: {
-        restaurantId: restaurant.id,
-        name: "후라이드 치킨",
-      },
-    },
-    update: {
-      categoryId: chickenCategory.id,
-      price: 18000,
-      isAvailable: true,
-      sortOrder: 1,
-    },
-    create: {
-      restaurantId: restaurant.id,
+  for (const item of [
+    {
       categoryId: chickenCategory.id,
       name: "후라이드 치킨",
       description: "바삭하게 튀긴 기본 치킨",
       price: 18000,
       sortOrder: 1,
     },
-  });
-
-  await prisma.menuItem.upsert({
-    where: {
-      restaurantId_name: {
-        restaurantId: restaurant.id,
-        name: "양념 치킨",
-      },
-    },
-    update: {
-      categoryId: chickenCategory.id,
-      price: 19000,
-      isAvailable: true,
-      sortOrder: 2,
-    },
-    create: {
-      restaurantId: restaurant.id,
+    {
       categoryId: chickenCategory.id,
       name: "양념 치킨",
       description: "매콤달콤한 양념 치킨",
       price: 19000,
       sortOrder: 2,
     },
-  });
-
-  await prisma.menuItem.upsert({
-    where: {
-      restaurantId_name: {
-        restaurantId: restaurant.id,
-        name: "감자튀김",
-      },
+    {
+      categoryId: chickenCategory.id,
+      name: "간장마늘 치킨",
+      description: "짭짤한 간장 소스와 마늘 향을 입힌 치킨",
+      price: 19500,
+      sortOrder: 3,
     },
-    update: {
-      categoryId: sideCategory.id,
-      price: 5000,
-      isAvailable: true,
-      sortOrder: 1,
+    {
+      categoryId: chickenCategory.id,
+      name: "매콤 청양 치킨",
+      description: "청양고추 소스로 깔끔하게 매운 치킨",
+      price: 19800,
+      sortOrder: 4,
     },
-    create: {
-      restaurantId: restaurant.id,
+    {
+      categoryId: chickenCategory.id,
+      name: "순살 반반 치킨",
+      description: "후라이드와 양념을 한 번에 먹는 순살 구성",
+      price: 20500,
+      sortOrder: 5,
+    },
+    {
+      categoryId: chickenCategory.id,
+      name: "허니버터 순살",
+      description: "달콤한 허니버터 시즈닝을 입힌 순살 치킨",
+      price: 19900,
+      sortOrder: 6,
+    },
+    {
       categoryId: sideCategory.id,
       name: "감자튀김",
       description: "주문과 함께 먹기 좋은 바삭한 사이드",
       price: 5000,
       sortOrder: 1,
     },
-  });
-
-  await prisma.menuItem.upsert({
-    where: {
-      restaurantId_name: {
-        restaurantId: restaurant.id,
-        name: "콜라 500ml",
-      },
+    {
+      categoryId: sideCategory.id,
+      name: "치즈볼 6개",
+      description: "쫄깃한 반죽 속 고소한 치즈볼",
+      price: 5500,
+      sortOrder: 2,
     },
-    update: {
-      categoryId: drinksCategory.id,
-      price: 2500,
-      isAvailable: true,
-      sortOrder: 1,
+    {
+      categoryId: sideCategory.id,
+      name: "닭껍질 튀김",
+      description: "짭짤하고 바삭한 닭껍질 스낵",
+      price: 6500,
+      sortOrder: 3,
     },
-    create: {
-      restaurantId: restaurant.id,
+    {
+      categoryId: sideCategory.id,
+      name: "콘샐러드",
+      description: "치킨과 잘 어울리는 달콤한 콘샐러드",
+      price: 3500,
+      sortOrder: 4,
+    },
+    {
       categoryId: drinksCategory.id,
       name: "콜라 500ml",
+      description: "치킨과 함께 마시는 기본 탄산음료",
       price: 2500,
       sortOrder: 1,
     },
-  });
+    {
+      categoryId: drinksCategory.id,
+      name: "사이다 500ml",
+      description: "깔끔한 레몬라임 탄산음료",
+      price: 2500,
+      sortOrder: 2,
+    },
+    {
+      categoryId: drinksCategory.id,
+      name: "제로콜라 500ml",
+      description: "가볍게 즐기는 제로 슈거 탄산음료",
+      price: 2600,
+      sortOrder: 3,
+    },
+  ]) {
+    await prisma.menuItem.upsert({
+      where: {
+        restaurantId_name: {
+          restaurantId: restaurant.id,
+          name: item.name,
+        },
+      },
+      update: {
+        categoryId: item.categoryId,
+        description: item.description,
+        price: item.price,
+        isAvailable: true,
+        sortOrder: item.sortOrder,
+      },
+      create: {
+        restaurantId: restaurant.id,
+        categoryId: item.categoryId,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        sortOrder: item.sortOrder,
+      },
+    });
+  }
 
   await seedRestaurant({
     ownerId: owner.id,
@@ -421,10 +448,34 @@ async function main() {
             sortOrder: 1,
           },
           {
+            name: "로제 떡볶이",
+            description: "부드러운 로제 소스에 밀떡을 넣은 인기 메뉴",
+            price: 8500,
+            sortOrder: 2,
+          },
+          {
+            name: "치즈 라볶이",
+            description: "라면사리와 치즈가 듬뿍 올라간 라볶이",
+            price: 8000,
+            sortOrder: 3,
+          },
+          {
             name: "참치 김밥",
             description: "참치마요와 아삭한 야채가 들어간 김밥",
             price: 4500,
-            sortOrder: 2,
+            sortOrder: 4,
+          },
+          {
+            name: "소고기 김밥",
+            description: "달큰하게 볶은 소고기와 야채가 들어간 김밥",
+            price: 5200,
+            sortOrder: 5,
+          },
+          {
+            name: "찰순대",
+            description: "쫀득한 순대와 소금, 막장 구성",
+            price: 6000,
+            sortOrder: 6,
           },
         ],
       },
@@ -437,6 +488,42 @@ async function main() {
             description: "김말이, 오징어, 야채튀김 구성",
             price: 5500,
             sortOrder: 1,
+          },
+          {
+            name: "김말이 튀김",
+            description: "떡볶이 국물에 찍어 먹기 좋은 김말이 5개",
+            price: 4000,
+            sortOrder: 2,
+          },
+          {
+            name: "오징어 튀김",
+            description: "큼직한 오징어를 바삭하게 튀긴 메뉴",
+            price: 5000,
+            sortOrder: 3,
+          },
+          {
+            name: "고구마 튀김",
+            description: "달콤한 고구마를 두툼하게 튀긴 사이드",
+            price: 4200,
+            sortOrder: 4,
+          },
+        ],
+      },
+      {
+        name: "음료",
+        sortOrder: 3,
+        items: [
+          {
+            name: "쿨피스 복숭아",
+            description: "매운 분식과 잘 어울리는 복숭아맛 음료",
+            price: 2000,
+            sortOrder: 1,
+          },
+          {
+            name: "캔 식혜",
+            description: "달콤하고 시원한 전통 음료",
+            price: 2500,
+            sortOrder: 2,
           },
         ],
       },
@@ -471,6 +558,30 @@ async function main() {
             price: 10800,
             sortOrder: 2,
           },
+          {
+            name: "수제 돈까스 도시락",
+            description: "두툼한 등심 돈까스와 양배추 샐러드 구성",
+            price: 11500,
+            sortOrder: 3,
+          },
+          {
+            name: "치킨마요 도시락",
+            description: "바삭한 치킨과 달콤한 마요 소스 조합",
+            price: 9200,
+            sortOrder: 4,
+          },
+          {
+            name: "연어구이 도시락",
+            description: "담백한 연어구이와 나물 반찬 구성",
+            price: 12800,
+            sortOrder: 5,
+          },
+          {
+            name: "소고기 비빔밥 도시락",
+            description: "나물, 고추장, 소고기를 비벼 먹는 든든한 한 끼",
+            price: 10500,
+            sortOrder: 6,
+          },
         ],
       },
       {
@@ -482,6 +593,42 @@ async function main() {
             description: "도시락과 함께 먹기 좋은 따뜻한 국",
             price: 2500,
             sortOrder: 1,
+          },
+          {
+            name: "김치찌개",
+            description: "돼지고기와 잘 익은 김치로 끓인 찌개",
+            price: 4500,
+            sortOrder: 2,
+          },
+          {
+            name: "소고기 미역국",
+            description: "부드러운 미역과 소고기를 넣은 담백한 국",
+            price: 4200,
+            sortOrder: 3,
+          },
+          {
+            name: "육개장",
+            description: "얼큰한 국물과 고사리가 들어간 든든한 국",
+            price: 5200,
+            sortOrder: 4,
+          },
+        ],
+      },
+      {
+        name: "추가 반찬",
+        sortOrder: 3,
+        items: [
+          {
+            name: "계란말이 추가",
+            description: "도시락에 곁들이기 좋은 부드러운 계란말이",
+            price: 3500,
+            sortOrder: 1,
+          },
+          {
+            name: "메추리알 장조림",
+            description: "짭짤달콤하게 조린 메추리알 반찬",
+            price: 3000,
+            sortOrder: 2,
           },
         ],
       },
