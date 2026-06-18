@@ -169,6 +169,67 @@ export async function removeCartItem(userId: string, cartItemId: string) {
   });
 }
 
+export async function decrementCartItem(userId: string, cartItemId: string) {
+  const cartItem = await prisma.cartItem.findFirst({
+    where: {
+      id: cartItemId,
+      cart: {
+        userId,
+        status: CartStatus.ACTIVE,
+      },
+    },
+    select: {
+      cartId: true,
+      id: true,
+      quantity: true,
+    },
+  });
+
+  if (!cartItem) {
+    return;
+  }
+
+  if (cartItem.quantity > 1) {
+    await prisma.cartItem.update({
+      where: {
+        id: cartItem.id,
+      },
+      data: {
+        quantity: {
+          decrement: 1,
+        },
+      },
+    });
+
+    return;
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.cartItem.delete({
+      where: {
+        id: cartItem.id,
+      },
+    });
+
+    const remainingItems = await tx.cartItem.count({
+      where: {
+        cartId: cartItem.cartId,
+      },
+    });
+
+    if (remainingItems === 0) {
+      await tx.cart.update({
+        where: {
+          id: cartItem.cartId,
+        },
+        data: {
+          status: CartStatus.ABANDONED,
+        },
+      });
+    }
+  });
+}
+
 export async function clearCart(userId: string, cartId: string) {
   const cart = await prisma.cart.findFirst({
     where: {

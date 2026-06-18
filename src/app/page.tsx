@@ -10,6 +10,7 @@ import { logoutAction } from "@/server/actions/auth.actions";
 import {
   addCartItemAction,
   clearCartAction,
+  decrementCartItemAction,
   removeCartItemAction,
 } from "@/server/actions/cart.actions";
 import { listActiveCarts } from "@/server/services/cart.service";
@@ -32,10 +33,12 @@ function getRestaurantSlug(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-function filterLinkClass(isActive: boolean) {
+function filterLinkClass(isActive: boolean, isCartRestaurant = false) {
   return [
     "rounded-md border p-3 transition",
-    isActive
+    isCartRestaurant
+      ? "border-[#38bdf8] bg-[#e0f7ff]"
+      : isActive
       ? "border-[#20251f] bg-[#eef3e8]"
       : "border-[#e4e2d7] hover:border-[#a7b599] hover:bg-[#f9faf4]",
   ].join(" ");
@@ -43,6 +46,15 @@ function filterLinkClass(isActive: boolean) {
 
 function getCartLineTotal(unitPrice: number, quantity: number) {
   return unitPrice * quantity;
+}
+
+function restaurantArticleClass(isCartRestaurant: boolean) {
+  return [
+    "rounded-lg border bg-white transition",
+    isCartRestaurant
+      ? "border-[#38bdf8] shadow-[0_0_0_2px_rgba(56,189,248,0.18)]"
+      : "border-[#deddd4]",
+  ].join(" ");
 }
 
 export default async function Home({ searchParams }: HomeProps) {
@@ -65,6 +77,9 @@ export default async function Home({ searchParams }: HomeProps) {
   ]);
   const selectedRestaurant = restaurantFilters.find(
     (restaurant) => restaurant.slug === selectedRestaurantSlug,
+  );
+  const activeRestaurantIds = new Set(
+    activeCarts.map((cart) => cart.restaurantId),
   );
   const cartSummaries = activeCarts.map((cart) => {
     const subtotalAmount = cart.items.reduce(
@@ -172,24 +187,36 @@ export default async function Home({ searchParams }: HomeProps) {
                   {restaurantFilters.length}곳 보기
                 </p>
               </Link>
-              {restaurantFilters.map((restaurant) => (
-                <Link
-                  className={filterLinkClass(
-                    selectedRestaurantSlug === restaurant.slug,
-                  )}
-                  href={`/?restaurant=${restaurant.slug}`}
-                  key={restaurant.id}
-                >
-                  <p className="font-semibold">{restaurant.name}</p>
-                  <p className="mt-1 text-sm text-[#62695f]">
-                    최소주문 {formatPrice(restaurant.minOrderAmount)}원
-                  </p>
-                  <p className="mt-1 text-xs text-[#7d8378]">
-                    메뉴 {restaurant._count.menuItems}개 · 배달비{" "}
-                    {formatPrice(restaurant.deliveryFee)}원
-                  </p>
-                </Link>
-              ))}
+              {restaurantFilters.map((restaurant) => {
+                const isCartRestaurant = activeRestaurantIds.has(restaurant.id);
+
+                return (
+                  <Link
+                    className={filterLinkClass(
+                      selectedRestaurantSlug === restaurant.slug,
+                      isCartRestaurant,
+                    )}
+                    href={`/?restaurant=${restaurant.slug}`}
+                    key={restaurant.id}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-semibold">{restaurant.name}</p>
+                      {isCartRestaurant ? (
+                        <span className="rounded-md bg-[#bae6fd] px-2 py-0.5 text-[11px] font-semibold text-[#075985]">
+                          담김
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-1 text-sm text-[#62695f]">
+                      최소주문 {formatPrice(restaurant.minOrderAmount)}원
+                    </p>
+                    <p className="mt-1 text-xs text-[#7d8378]">
+                      메뉴 {restaurant._count.menuItems}개 · 배달비{" "}
+                      {formatPrice(restaurant.deliveryFee)}원
+                    </p>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </aside>
@@ -207,9 +234,12 @@ export default async function Home({ searchParams }: HomeProps) {
               </p>
             </div>
           ) : (
-            restaurants.map((restaurant) => (
+            restaurants.map((restaurant) => {
+              const isCartRestaurant = activeRestaurantIds.has(restaurant.id);
+
+              return (
               <article
-                className="rounded-lg border border-[#deddd4] bg-white"
+                className={restaurantArticleClass(isCartRestaurant)}
                 id={restaurant.slug}
                 key={restaurant.id}
               >
@@ -219,9 +249,16 @@ export default async function Home({ searchParams }: HomeProps) {
                       <p className="text-sm font-medium text-[#66715f]">
                         {restaurant.opensAt} - {restaurant.closesAt}
                       </p>
-                      <h2 className="mt-1 text-2xl font-semibold">
-                        {restaurant.name}
-                      </h2>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <h2 className="text-2xl font-semibold">
+                          {restaurant.name}
+                        </h2>
+                        {isCartRestaurant ? (
+                          <span className="rounded-md bg-[#bae6fd] px-2 py-1 text-xs font-semibold text-[#075985]">
+                            장바구니 식당
+                          </span>
+                        ) : null}
+                      </div>
                       <p className="mt-2 max-w-2xl text-sm leading-6 text-[#62695f]">
                         {restaurant.description}
                       </p>
@@ -240,6 +277,7 @@ export default async function Home({ searchParams }: HomeProps) {
                         {category.items.map((item) => (
                           <div
                             className="grid gap-3 rounded-lg border border-[#e4e2d7] p-4 sm:grid-cols-[1fr_auto]"
+                            id={`menu-item-${item.id}`}
                             key={item.id}
                           >
                             <div>
@@ -256,12 +294,18 @@ export default async function Home({ searchParams }: HomeProps) {
                               </p>
                               <form
                                 action={addCartItemAction}
+                                data-scroll-anchor={`#menu-item-${item.id}`}
                                 data-preserve-scroll="true"
                               >
                                 <input
                                   name="menuItemId"
                                   type="hidden"
                                   value={item.id}
+                                />
+                                <input
+                                  name="scrollTarget"
+                                  type="hidden"
+                                  value={`menu-item-${item.id}`}
                                 />
                                 <button
                                   className="h-9 rounded-md bg-[#20251f] px-4 text-sm font-semibold text-white transition hover:bg-[#3c4537]"
@@ -279,11 +323,12 @@ export default async function Home({ searchParams }: HomeProps) {
                   ))}
                 </div>
               </article>
-            ))
+              );
+            })
           )}
         </section>
 
-        <aside className="lg:sticky lg:top-5 lg:self-start">
+        <aside className="lg:sticky lg:top-5 lg:self-start" id="order-panel">
           <div className="rounded-lg border border-[#deddd4] bg-white p-5">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">주문</h2>
@@ -325,6 +370,7 @@ export default async function Home({ searchParams }: HomeProps) {
                   ({ cart, minOrderAmount, remainingAmount, subtotalAmount }) => (
                   <section
                     className="rounded-md border border-[#e4e2d7] p-4"
+                    id={`cart-${cart.id}`}
                     key={cart.id}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -336,9 +382,15 @@ export default async function Home({ searchParams }: HomeProps) {
                       </div>
                       <form
                         action={clearCartAction}
+                        data-scroll-anchor="#order-panel"
                         data-preserve-scroll="true"
                       >
                         <input name="cartId" type="hidden" value={cart.id} />
+                        <input
+                          name="scrollTarget"
+                          type="hidden"
+                          value="order-panel"
+                        />
                         <button
                           className="text-xs font-semibold text-[#8a3a29] underline-offset-2 hover:underline"
                           type="submit"
@@ -352,6 +404,7 @@ export default async function Home({ searchParams }: HomeProps) {
                       {cart.items.map((item) => (
                         <div
                           className="grid grid-cols-[1fr_auto] gap-3 border-t border-[#eeeade] pt-3"
+                          id={`cart-item-${item.id}`}
                           key={item.id}
                         >
                           <div>
@@ -369,14 +422,73 @@ export default async function Home({ searchParams }: HomeProps) {
                               )}
                               원
                             </p>
+                            <div className="flex h-8 items-center overflow-hidden rounded-md border border-[#c9c7ba] bg-white">
+                              <form
+                                action={decrementCartItemAction}
+                                data-scroll-anchor="#order-panel"
+                                data-preserve-scroll="true"
+                              >
+                                <input
+                                  name="cartItemId"
+                                  type="hidden"
+                                  value={item.id}
+                                />
+                                <input
+                                  name="scrollTarget"
+                                  type="hidden"
+                                  value="order-panel"
+                                />
+                                <button
+                                  aria-label={`${item.menuItem.name} 수량 줄이기`}
+                                  className="flex h-8 w-8 items-center justify-center text-base font-semibold text-[#4d5549] transition hover:bg-[#effaff]"
+                                  data-testid={`decrement-cart-${item.id}`}
+                                  type="submit"
+                                >
+                                  -
+                                </button>
+                              </form>
+                              <span className="flex h-8 min-w-8 items-center justify-center border-x border-[#d8d3c5] px-2 text-sm font-semibold">
+                                {item.quantity}
+                              </span>
+                              <form
+                                action={addCartItemAction}
+                                data-scroll-anchor={`#cart-item-${item.id}`}
+                                data-preserve-scroll="true"
+                              >
+                                <input
+                                  name="menuItemId"
+                                  type="hidden"
+                                  value={item.menuItemId}
+                                />
+                                <input
+                                  name="scrollTarget"
+                                  type="hidden"
+                                  value={`cart-item-${item.id}`}
+                                />
+                                <button
+                                  aria-label={`${item.menuItem.name} 수량 늘리기`}
+                                  className="flex h-8 w-8 items-center justify-center text-base font-semibold text-[#4d5549] transition hover:bg-[#effaff]"
+                                  data-testid={`increment-cart-${item.id}`}
+                                  type="submit"
+                                >
+                                  +
+                                </button>
+                              </form>
+                            </div>
                             <form
                               action={removeCartItemAction}
+                              data-scroll-anchor="#order-panel"
                               data-preserve-scroll="true"
                             >
                               <input
                                 name="cartItemId"
                                 type="hidden"
                                 value={item.id}
+                              />
+                              <input
+                                name="scrollTarget"
+                                type="hidden"
+                                value="order-panel"
                               />
                               <button
                                 className="text-xs font-semibold text-[#8a3a29] underline-offset-2 hover:underline"
