@@ -16,3 +16,18 @@ export function findUserByEmail(email: string) {
   });
 }
 
+export function getDefaultAddressForUser(userId: string) {
+  return prisma.address.findFirst({
+    where: {
+      userId,
+    },
+    orderBy: [
+      {
+        isDefault: "desc",
+      },
+      {
+        createdAt: "asc",
+      },
+    ],
+  });
+}

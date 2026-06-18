@@ -10,7 +10,7 @@ import { UserRole } from "@/generated/prisma/enums";
 type RegisterUserInput = {
   email: string;
   password: string;
-  name: string;
+  nickname: string;
   phone?: string;
 };
 
@@ -25,7 +25,7 @@ export async function registerUser(input: RegisterUserInput) {
   return prisma.user.create({
     data: {
       email,
-      name: input.name.trim(),
+      name: input.nickname.trim(),
       phone: input.phone?.trim() || null,
       role: UserRole.CUSTOMER,
       passwordCredential: {
@@ -93,4 +93,3 @@ export async function revokeUserSession(token: string) {
     },
   });
 }
-

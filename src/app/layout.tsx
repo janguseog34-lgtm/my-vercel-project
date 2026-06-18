@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "my-vercel-project",
-  description: "Next.js full-stack app with Prisma and PostgreSQL",
+  title: "동네한끼",
+  description: "Next.js delivery app with Prisma and PostgreSQL",
 };
 
 export default function RootLayout({

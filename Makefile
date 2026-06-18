@@ -37,4 +37,4 @@ lint:
 	docker compose exec app pnpm lint
 
 build:
-	docker compose exec app pnpm build
+	docker compose exec -e NODE_ENV=production app pnpm build

@@ -16,7 +16,6 @@ services:
     env_file:
       - .env.docker
     environment:
-      NODE_ENV: development
       NEXT_TELEMETRY_DISABLED: "1"
     depends_on:
       postgres:
@@ -42,4 +41,3 @@ volumes:
   app_node_modules:
   app_next:
   postgres_data:
-
