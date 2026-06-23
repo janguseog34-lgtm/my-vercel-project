@@ -127,5 +127,5 @@ export async function logoutAction() {
   }
 
   await clearSessionCookie();
-  redirect("/login");
+  redirect("/login?loggedOut=1");
 }

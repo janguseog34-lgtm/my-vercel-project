@@ -71,6 +71,7 @@ function createOrderNumber() {
 export async function placeOrdersFromActiveCarts(
   userId: string,
   deliveryAddress: DeliveryAddressInput,
+  paymentMethod: PaymentMethod = PaymentMethod.CARD,
 ) {
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.findUnique({
@@ -152,10 +153,10 @@ export async function placeOrdersFromActiveCarts(
           },
           payments: {
             create: {
-              method: PaymentMethod.MOCK,
+              method: paymentMethod,
               status: PaymentStatus.PENDING,
               amount: totalAmount,
-              provider: "internal-mock",
+              provider: `internal-${paymentMethod.toLowerCase()}`,
             },
           },
           statusEvents: {

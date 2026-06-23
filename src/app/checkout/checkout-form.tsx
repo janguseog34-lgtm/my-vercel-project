@@ -13,6 +13,18 @@ type CheckoutFormProps = {
 
 const initialState: PlaceOrderFormState = {};
 
+const requestOptions = [
+  { label: "선택 안 함", value: "" },
+  "문 앞에 놓아주세요",
+  "도착하면 전화주세요",
+  "벨은 누르지 말아주세요",
+  "수저/포크는 빼주세요",
+  "일회용품을 챙겨주세요",
+  "소스는 따로 담아주세요",
+].map((option) =>
+  typeof option === "string" ? { label: option, value: option } : option,
+);
+
 export function CheckoutForm({ defaultValues }: CheckoutFormProps) {
   const [state, formAction, isPending] = useActionState(
     placeOrderAction,
@@ -28,14 +40,14 @@ export function CheckoutForm({ defaultValues }: CheckoutFormProps) {
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label
-            className="text-sm font-semibold text-[#3f453c]"
+            className="text-sm font-bold text-[var(--foreground)]"
             htmlFor="recipientName"
           >
             수령인
           </label>
           <input
             autoComplete="name"
-            className="mt-2 h-11 w-full rounded-md border border-[#d8d6ca] bg-white px-3 text-sm outline-none focus:border-[#8d9b7f]"
+            className="form-input mt-2"
             defaultValue={values.recipientName}
             id="recipientName"
             name="recipientName"
@@ -46,14 +58,14 @@ export function CheckoutForm({ defaultValues }: CheckoutFormProps) {
 
         <div>
           <label
-            className="text-sm font-semibold text-[#3f453c]"
+            className="text-sm font-bold text-[var(--foreground)]"
             htmlFor="phone"
           >
             전화번호
           </label>
           <input
             autoComplete="tel"
-            className="mt-2 h-11 w-full rounded-md border border-[#d8d6ca] bg-white px-3 text-sm outline-none focus:border-[#8d9b7f]"
+            className="form-input mt-2"
             defaultValue={values.phone}
             id="phone"
             name="phone"
@@ -65,14 +77,14 @@ export function CheckoutForm({ defaultValues }: CheckoutFormProps) {
 
       <div>
         <label
-          className="text-sm font-semibold text-[#3f453c]"
+          className="text-sm font-bold text-[var(--foreground)]"
           htmlFor="addressLine1"
         >
           주소
         </label>
         <input
           autoComplete="street-address"
-          className="mt-2 h-11 w-full rounded-md border border-[#d8d6ca] bg-white px-3 text-sm outline-none focus:border-[#8d9b7f]"
+          className="form-input mt-2"
           defaultValue={values.addressLine1}
           id="addressLine1"
           name="addressLine1"
@@ -82,17 +94,17 @@ export function CheckoutForm({ defaultValues }: CheckoutFormProps) {
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-[1fr_160px]">
+      <div className="grid gap-4 sm:grid-cols-[1fr_190px]">
         <div>
           <label
-            className="text-sm font-semibold text-[#3f453c]"
+            className="text-sm font-bold text-[var(--foreground)]"
             htmlFor="addressLine2"
           >
             상세주소
           </label>
           <input
             autoComplete="address-line2"
-            className="mt-2 h-11 w-full rounded-md border border-[#d8d6ca] bg-white px-3 text-sm outline-none focus:border-[#8d9b7f]"
+            className="form-input mt-2"
             defaultValue={values.addressLine2}
             id="addressLine2"
             name="addressLine2"
@@ -103,54 +115,78 @@ export function CheckoutForm({ defaultValues }: CheckoutFormProps) {
 
         <div>
           <label
-            className="text-sm font-semibold text-[#3f453c]"
-            htmlFor="postalCode"
+            className="text-sm font-bold text-[var(--foreground)]"
+            htmlFor="paymentMethod"
           >
-            우편번호
+            결제 방법
           </label>
-          <input
-            autoComplete="postal-code"
-            className="mt-2 h-11 w-full rounded-md border border-[#d8d6ca] bg-white px-3 text-sm outline-none focus:border-[#8d9b7f]"
-            defaultValue={values.postalCode}
-            id="postalCode"
-            name="postalCode"
-            type="text"
-          />
+          <select
+            className="form-select mt-2"
+            defaultValue={values.paymentMethod ?? "CARD"}
+            id="paymentMethod"
+            name="paymentMethod"
+          >
+            <option value="CARD">카드 결제</option>
+            <option value="CASH">현금 결제</option>
+            <option value="MOCK">앱 테스트 결제</option>
+          </select>
         </div>
       </div>
 
       <div>
-        <label className="text-sm font-semibold text-[#3f453c]" htmlFor="memo">
-          요청사항
+        <label
+          className="text-sm font-bold text-[var(--foreground)]"
+          htmlFor="requestOption"
+        >
+          요청사항 <span className="font-semibold text-[var(--muted)]">(선택)</span>
+        </label>
+        <select
+          className="form-select mt-2"
+          defaultValue={values.requestOption ?? ""}
+          id="requestOption"
+          name="requestOption"
+        >
+          {requestOptions.map((option) => (
+            <option key={option.label} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label
+          className="text-sm font-bold text-[var(--foreground)]"
+          htmlFor="customMemo"
+        >
+          기타사항 <span className="font-semibold text-[var(--muted)]">(직접 입력)</span>
         </label>
         <textarea
-          className="mt-2 min-h-24 w-full rounded-md border border-[#d8d6ca] bg-white px-3 py-3 text-sm outline-none focus:border-[#8d9b7f]"
-          defaultValue={values.memo}
-          id="memo"
-          name="memo"
-          placeholder="문 앞에 놓아주세요."
+          className="form-textarea mt-2"
+          defaultValue={values.customMemo}
+          id="customMemo"
+          name="customMemo"
+          placeholder="예: 아이가 자고 있어서 조용히 부탁드려요."
         />
       </div>
 
       {state.error ? (
-        <p className="rounded-md bg-[#fff1ef] px-3 py-2 text-sm text-[#a53622]">
-          {state.error}
-        </p>
+        <p className="notice-danger">{state.error}</p>
       ) : null}
 
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Link
-          className="inline-flex h-11 items-center justify-center rounded-md border border-[#c9c7ba] px-4 text-sm font-semibold transition hover:bg-[#f0eee4]"
+          className="button-secondary h-11"
           href="/"
         >
           장바구니로 돌아가기
         </Link>
         <button
-          className="h-11 rounded-md bg-[#20251f] px-5 text-sm font-semibold text-white transition hover:bg-[#3c4537] disabled:cursor-not-allowed disabled:bg-[#9aa196]"
+          className="button-primary h-11"
           disabled={isPending}
           type="submit"
         >
-          {isPending ? "주문 저장 중" : "주소 입력 완료 후 주문하기"}
+          {isPending ? "주문 저장 중" : "배송지와 결제 방법 확인 후 주문하기"}
         </button>
       </div>
     </form>

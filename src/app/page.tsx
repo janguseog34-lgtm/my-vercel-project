@@ -1,18 +1,13 @@
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
-import { CartScrollRestorer } from "@/app/cart-scroll-restorer";
+import { CartActionForm } from "@/app/cart-action-form";
 import {
   listOpenRestaurantFilters,
   listOpenRestaurants,
 } from "@/server/services/restaurants.service";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { logoutAction } from "@/server/actions/auth.actions";
-import {
-  addCartItemAction,
-  clearCartAction,
-  decrementCartItemAction,
-  removeCartItemAction,
-} from "@/server/actions/cart.actions";
 import { listActiveCarts } from "@/server/services/cart.service";
 
 export const dynamic = "force-dynamic";
@@ -35,13 +30,12 @@ function getRestaurantSlug(value?: string | string[]) {
 
 function filterLinkClass(isActive: boolean, isCartRestaurant = false) {
   return [
-    "rounded-md border p-3 transition",
-    isCartRestaurant
-      ? "border-[#38bdf8] bg-[#e0f7ff]"
-      : isActive
-      ? "border-[#20251f] bg-[#eef3e8]"
-      : "border-[#e4e2d7] hover:border-[#a7b599] hover:bg-[#f9faf4]",
-  ].join(" ");
+    "filter-card",
+    isActive ? "filter-card-active" : "",
+    isCartRestaurant ? "filter-card-cart" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function getCartLineTotal(unitPrice: number, quantity: number) {
@@ -50,11 +44,65 @@ function getCartLineTotal(unitPrice: number, quantity: number) {
 
 function restaurantArticleClass(isCartRestaurant: boolean) {
   return [
-    "rounded-lg border bg-white transition",
-    isCartRestaurant
-      ? "border-[#38bdf8] shadow-[0_0_0_2px_rgba(56,189,248,0.18)]"
-      : "border-[#deddd4]",
-  ].join(" ");
+    "restaurant-panel",
+    isCartRestaurant ? "restaurant-panel-cart" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function getRestaurantCoverImage(slug: string) {
+  const coverImages: Record<string, string> = {
+    "dondeun-lunchbox": "/images/restaurant-dosirak.png",
+    "gangnam-bunsik": "/images/restaurant-bunsik.png",
+    "seoul-chicken-house": "/images/restaurant-chicken.png",
+  };
+
+  return coverImages[slug] ?? "/images/auth-food-spread.png";
+}
+
+function getMenuImage(name: string) {
+  const menuImages: Record<string, string> = {
+    "후라이드 치킨": "/images/menu-items/fried-chicken.webp",
+    "양념 치킨": "/images/menu-items/yangnyeom-chicken.webp",
+    "간장마늘 치킨": "/images/menu-items/soy-garlic-chicken.webp",
+    "매콤 청양 치킨": "/images/menu-items/spicy-cheongyang-chicken.webp",
+    "순살 반반 치킨": "/images/menu-items/half-half-boneless-chicken.webp",
+    "허니버터 순살": "/images/menu-items/honey-butter-boneless.webp",
+    "감자튀김": "/images/menu-items/french-fries.webp",
+    "치즈볼 6개": "/images/menu-items/cheese-balls.webp",
+    "닭껍질 튀김": "/images/menu-items/fried-chicken-skin.webp",
+    "콘샐러드": "/images/menu-items/corn-salad.webp",
+    "콜라 500ml": "/images/menu-items/cola-500ml.webp",
+    "사이다 500ml": "/images/menu-items/cider-500ml.webp",
+    "제로콜라 500ml": "/images/menu-items/zero-cola-500ml.webp",
+    "국물 떡볶이": "/images/menu-items/soupy-tteokbokki.webp",
+    "로제 떡볶이": "/images/menu-items/rose-tteokbokki.webp",
+    "치즈 라볶이": "/images/menu-items/cheese-rabokki.webp",
+    "참치 김밥": "/images/menu-items/tuna-kimbap.webp",
+    "소고기 김밥": "/images/menu-items/beef-kimbap.webp",
+    "찰순대": "/images/menu-items/sundae.webp",
+    "모듬 튀김": "/images/menu-items/assorted-tempura.webp",
+    "김말이 튀김": "/images/menu-items/gimmari-tempura.webp",
+    "오징어 튀김": "/images/menu-items/squid-tempura.webp",
+    "고구마 튀김": "/images/menu-items/sweet-potato-tempura.webp",
+    "쿨피스 복숭아": "/images/menu-items/peach-coolpis.webp",
+    "캔 식혜": "/images/menu-items/canned-sikhye.webp",
+    "제육 도시락": "/images/menu-items/jeyuk-dosirak.webp",
+    "불고기 도시락": "/images/menu-items/bulgogi-dosirak.webp",
+    "수제 돈까스 도시락": "/images/menu-items/pork-cutlet-dosirak.webp",
+    "치킨마요 도시락": "/images/menu-items/chicken-mayo-dosirak.webp",
+    "연어구이 도시락": "/images/menu-items/grilled-salmon-dosirak.webp",
+    "소고기 비빔밥 도시락": "/images/menu-items/beef-bibimbap-dosirak.webp",
+    "된장국": "/images/menu-items/doenjang-soup.webp",
+    "김치찌개": "/images/menu-items/kimchi-jjigae.webp",
+    "소고기 미역국": "/images/menu-items/beef-seaweed-soup.webp",
+    "육개장": "/images/menu-items/yukgaejang.webp",
+    "계란말이 추가": "/images/menu-items/rolled-omelet.webp",
+    "메추리알 장조림": "/images/menu-items/quail-egg-jangjorim.webp",
+  };
+
+  return menuImages[name] ?? "/images/auth-food-spread.png";
 }
 
 export default async function Home({ searchParams }: HomeProps) {
@@ -99,15 +147,18 @@ export default async function Home({ searchParams }: HomeProps) {
   });
   const cartItemCount = activeCarts.reduce(
     (total, cart) =>
-      total + cart.items.reduce((itemTotal, item) => itemTotal + item.quantity, 0),
+      total +
+      cart.items.reduce((itemTotal, item) => itemTotal + item.quantity, 0),
     0,
   );
   const cartSubtotal = activeCarts.reduce(
-    (total, cart) => total + cart.items.reduce(
-      (itemTotal, item) =>
-        itemTotal + getCartLineTotal(item.unitPrice, item.quantity),
-      0,
-    ),
+    (total, cart) =>
+      total +
+      cart.items.reduce(
+        (itemTotal, item) =>
+          itemTotal + getCartLineTotal(item.unitPrice, item.quantity),
+        0,
+      ),
     0,
   );
   const cartDeliveryFee = activeCarts.reduce(
@@ -121,72 +172,93 @@ export default async function Home({ searchParams }: HomeProps) {
     cartSummaries.every((summary) => summary.remainingAmount === 0);
 
   return (
-    <main className="min-h-screen bg-[#f7f7f4] text-[#20231f]">
-      <CartScrollRestorer />
-      <section className="border-b border-[#deddd4] bg-[#ffffff] px-5 py-4">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#66715f]">
-              Delivery
-            </p>
-            <h1 className="text-2xl font-semibold tracking-normal">동네한끼</h1>
+    <main className="app-screen">
+      <header className="site-header">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <Link className="brand-lockup" href="/">
+            <span className="brand-mark">모</span>
+            <span className="min-w-0">
+              <span className="block text-lg font-black">모락한끼</span>
+              <span className="block text-xs font-semibold text-[var(--muted)]">
+                강남구 테헤란로
+              </span>
+            </span>
+          </Link>
+
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="rounded-lg bg-[var(--mint)] px-3 py-2 font-bold text-[#256347]">
+              지금 주문 가능
+            </span>
+            <span className="rounded-lg bg-white px-3 py-2 font-bold text-[var(--foreground)] ring-1 ring-[var(--line)]">
+              {currentUser.name}
+            </span>
+            <Link className="button-secondary" href="/orders">
+              내 주문
+            </Link>
+            <form action={logoutAction}>
+              <button className="button-secondary" type="submit">
+                로그아웃
+              </button>
+            </form>
           </div>
-          <div className="flex flex-col gap-3 sm:items-end">
-            <div className="text-sm text-[#60675d] sm:text-right">
-              <p className="font-medium text-[#20231f]">강남구 테헤란로</p>
-              <p>지금 주문 가능</p>
+        </div>
+      </header>
+
+      <section className="mx-auto max-w-7xl px-4 pt-5 sm:px-6">
+        <div className="home-hero grid gap-5 p-5 md:grid-cols-[minmax(0,1fr)_360px] md:p-6">
+          <div>
+            <p className="eyebrow">오늘의 동네 배달</p>
+            <h1 className="mt-2 text-3xl font-black tracking-normal text-[var(--foreground)] sm:text-4xl">
+              먹고 싶은 메뉴를 고르고 바로 주문하세요.
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
+              한 식당 메뉴만 장바구니에 담을 수 있고, 최소주문금액을 채우면
+              주소 입력 후 주문이 저장됩니다.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 self-end">
+            <div className="metric-pill">
+              <p className="text-xs font-bold text-[var(--muted)]">영업 식당</p>
+              <p className="mt-1 text-2xl font-black">
+                {restaurantFilters.length}
+              </p>
             </div>
-            {currentUser ? (
-              <div className="flex flex-wrap items-center gap-3 text-sm">
-                <span className="font-medium text-[#20231f]">
-                  {currentUser.name}
-                </span>
-                <Link
-                  className="flex h-9 items-center rounded-md border border-[#c9c7ba] px-3 font-semibold text-[#3f453c] transition hover:bg-[#f0eee4]"
-                  href="/orders"
-                >
-                  내 주문
-                </Link>
-                <form action={logoutAction}>
-                  <button
-                    className="h-9 rounded-md border border-[#c9c7ba] px-3 font-semibold text-[#3f453c] transition hover:bg-[#f0eee4]"
-                    type="submit"
-                  >
-                    로그아웃
-                  </button>
-                </form>
-              </div>
-            ) : (
-              <div className="flex gap-2 text-sm">
-                <Link
-                  className="flex h-9 items-center rounded-md border border-[#c9c7ba] px-3 font-semibold text-[#3f453c] transition hover:bg-[#f0eee4]"
-                  href="/login"
-                >
-                  로그인
-                </Link>
-                <Link
-                  className="flex h-9 items-center rounded-md bg-[#20251f] px-3 font-semibold text-white transition hover:bg-[#3c4537]"
-                  href="/signup"
-                >
-                  회원가입
-                </Link>
-              </div>
-            )}
+            <div className="metric-pill">
+              <p className="text-xs font-bold text-[var(--muted)]">담은 메뉴</p>
+              <p className="mt-1 text-2xl font-black">{cartItemCount}</p>
+            </div>
+            <div className="metric-pill">
+              <p className="text-xs font-bold text-[var(--muted)]">메뉴 합계</p>
+              <p className="mt-1 text-lg font-black">
+                {formatPrice(cartSubtotal)}원
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-6xl gap-5 px-5 py-6 lg:grid-cols-[280px_minmax(0,1fr)_300px]">
-        <aside className="flex flex-col gap-3">
-          <div className="rounded-lg border border-[#deddd4] bg-white p-4">
-            <p className="text-sm font-semibold text-[#66715f]">가게</p>
+      <section className="mx-auto grid max-w-7xl gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[270px_minmax(0,1fr)_340px]">
+        <aside className="lg:sticky lg:top-24 lg:self-start">
+          <div className="panel p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="eyebrow">Restaurant</p>
+                <h2 className="mt-1 text-lg font-black">식당 선택</h2>
+              </div>
+              <span className="rounded-lg bg-[var(--brand-soft)] px-2 py-1 text-xs font-black text-[var(--brand-dark)]">
+                {restaurantFilters.length}곳
+              </span>
+            </div>
+
             <div className="mt-4 flex flex-col gap-2">
               <Link className={filterLinkClass(!selectedRestaurantSlug)} href="/">
-                <p className="font-semibold">전체 식당</p>
-                <p className="mt-1 text-sm text-[#62695f]">
-                  {restaurantFilters.length}곳 보기
-                </p>
+                <span className="block font-black">전체 식당</span>
+                <span className="mt-1 block text-sm text-[var(--muted)]">
+                  모든 메뉴를 한눈에 보기
+                </span>
               </Link>
+
               {restaurantFilters.map((restaurant) => {
                 const isCartRestaurant = activeRestaurantIds.has(restaurant.id);
 
@@ -199,21 +271,21 @@ export default async function Home({ searchParams }: HomeProps) {
                     href={`/?restaurant=${restaurant.slug}`}
                     key={restaurant.id}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="font-semibold">{restaurant.name}</p>
+                    <span className="flex items-start justify-between gap-2">
+                      <span className="font-black">{restaurant.name}</span>
                       {isCartRestaurant ? (
-                        <span className="rounded-md bg-[#bae6fd] px-2 py-0.5 text-[11px] font-semibold text-[#075985]">
+                        <span className="rounded-md bg-[#bae6fd] px-2 py-0.5 text-[11px] font-black text-[#075985]">
                           담김
                         </span>
                       ) : null}
-                    </div>
-                    <p className="mt-1 text-sm text-[#62695f]">
+                    </span>
+                    <span className="mt-1 block text-sm text-[var(--muted)]">
                       최소주문 {formatPrice(restaurant.minOrderAmount)}원
-                    </p>
-                    <p className="mt-1 text-xs text-[#7d8378]">
+                    </span>
+                    <span className="mt-1 block text-xs font-semibold text-[#7b887d]">
                       메뉴 {restaurant._count.menuItems}개 · 배달비{" "}
                       {formatPrice(restaurant.deliveryFee)}원
-                    </p>
+                    </span>
                   </Link>
                 );
               })}
@@ -223,144 +295,187 @@ export default async function Home({ searchParams }: HomeProps) {
 
         <section className="flex flex-col gap-5">
           {restaurants.length === 0 ? (
-            <div className="rounded-lg border border-[#deddd4] bg-white p-6">
-              <h2 className="text-xl font-semibold">
+            <div className="panel p-6">
+              <h2 className="text-xl font-black">
                 {selectedRestaurantSlug
                   ? "선택한 식당을 찾을 수 없습니다"
                   : "영업 중인 가게가 없습니다"}
               </h2>
-              <p className="mt-2 text-sm text-[#62695f]">
+              <p className="mt-2 text-sm text-[var(--muted)]">
                 왼쪽 필터에서 다른 식당을 선택해주세요.
               </p>
             </div>
           ) : (
             restaurants.map((restaurant) => {
               const isCartRestaurant = activeRestaurantIds.has(restaurant.id);
+              const coverImage = getRestaurantCoverImage(restaurant.slug);
 
               return (
-              <article
-                className={restaurantArticleClass(isCartRestaurant)}
-                id={restaurant.slug}
-                key={restaurant.id}
-              >
-                <div className="border-b border-[#e4e2d7] p-5">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-[#66715f]">
-                        {restaurant.opensAt} - {restaurant.closesAt}
-                      </p>
-                      <div className="mt-1 flex flex-wrap items-center gap-2">
-                        <h2 className="text-2xl font-semibold">
-                          {restaurant.name}
-                        </h2>
-                        {isCartRestaurant ? (
-                          <span className="rounded-md bg-[#bae6fd] px-2 py-1 text-xs font-semibold text-[#075985]">
-                            장바구니 식당
-                          </span>
-                        ) : null}
+                <article
+                  className={restaurantArticleClass(isCartRestaurant)}
+                  id={restaurant.slug}
+                  key={restaurant.id}
+                >
+                  <div className="restaurant-head p-5">
+                    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+                      <div>
+                        <p className="text-sm font-bold text-[var(--brand-dark)]">
+                          {restaurant.opensAt} - {restaurant.closesAt}
+                        </p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <h2 className="text-2xl font-black">
+                            {restaurant.name}
+                          </h2>
+                          {isCartRestaurant ? (
+                            <span className="rounded-md bg-[#bae6fd] px-2 py-1 text-xs font-black text-[#075985]">
+                              장바구니 식당
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">
+                          {restaurant.description}
+                        </p>
+
+                        <div className="mt-4 grid grid-cols-2 gap-2 text-sm sm:max-w-md">
+                          <div className="rounded-lg bg-white/80 p-3 ring-1 ring-[var(--line)]">
+                            <p className="text-xs font-bold text-[var(--muted)]">
+                              최소주문
+                            </p>
+                            <p className="mt-1 font-black">
+                              {formatPrice(restaurant.minOrderAmount)}원
+                            </p>
+                          </div>
+                          <div className="rounded-lg bg-white/80 p-3 ring-1 ring-[var(--line)]">
+                            <p className="text-xs font-bold text-[var(--muted)]">
+                              배달비
+                            </p>
+                            <p className="mt-1 font-black">
+                              {formatPrice(restaurant.deliveryFee)}원
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                      <p className="mt-2 max-w-2xl text-sm leading-6 text-[#62695f]">
-                        {restaurant.description}
-                      </p>
-                    </div>
-                    <div className="rounded-md bg-[#eef3e8] px-3 py-2 text-sm text-[#3e493a]">
-                      배달비 {formatPrice(restaurant.deliveryFee)}원
+
+                      <div className="restaurant-cover">
+                        <Image
+                          alt={`${restaurant.name} 대표 음식 사진`}
+                          className="restaurant-cover-image"
+                          height={315}
+                          src={coverImage}
+                          width={560}
+                        />
+                        <div className="restaurant-cover-badge">
+                          메뉴 {restaurant.categories.reduce(
+                            (total, category) => total + category.items.length,
+                            0,
+                          )}
+                          개
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex flex-col gap-6 p-5">
-                  {restaurant.categories.map((category) => (
-                    <section key={category.id}>
-                      <h3 className="text-lg font-semibold">{category.name}</h3>
-                      <div className="mt-3 grid gap-3">
-                        {category.items.map((item) => (
-                          <div
-                            className="grid gap-3 rounded-lg border border-[#e4e2d7] p-4 sm:grid-cols-[1fr_auto]"
-                            id={`menu-item-${item.id}`}
-                            key={item.id}
-                          >
-                            <div>
-                              <p className="font-semibold">{item.name}</p>
-                              {item.description ? (
-                                <p className="mt-1 text-sm leading-6 text-[#62695f]">
-                                  {item.description}
+                  <div className="flex flex-col gap-6 p-5">
+                    {restaurant.categories.map((category) => (
+                      <section key={category.id}>
+                        <div className="flex items-center justify-between gap-3">
+                          <h3 className="text-lg font-black">{category.name}</h3>
+                          <span className="text-xs font-bold text-[var(--muted)]">
+                            {category.items.length}개
+                          </span>
+                        </div>
+                        <div className="menu-grid mt-3">
+                          {category.items.map((item) => (
+                            <div
+                              className="menu-card"
+                              id={`menu-item-${item.id}`}
+                              key={item.id}
+                            >
+                              <div className="menu-photo-frame">
+                                <Image
+                                  alt={`${item.name} 사진`}
+                                  className="menu-photo-image"
+                                  height={420}
+                                  sizes="(max-width: 640px) 112px, 132px"
+                                  src={item.imageUrl ?? getMenuImage(item.name)}
+                                  width={420}
+                                />
+                              </div>
+
+                              <div className="min-w-0">
+                                <p className="font-black">{item.name}</p>
+                                {item.description ? (
+                                  <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+                                    {item.description}
+                                  </p>
+                                ) : null}
+                              </div>
+
+                              <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end sm:justify-center">
+                                <p className="whitespace-nowrap font-black">
+                                  {formatPrice(item.price)}원
                                 </p>
-                              ) : null}
-                            </div>
-                            <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
-                              <p className="font-semibold">
-                                {formatPrice(item.price)}원
-                              </p>
-                              <form
-                                action={addCartItemAction}
-                                data-scroll-anchor={`#menu-item-${item.id}`}
-                                data-preserve-scroll="true"
-                              >
-                                <input
-                                  name="menuItemId"
-                                  type="hidden"
-                                  value={item.id}
-                                />
-                                <input
-                                  name="scrollTarget"
-                                  type="hidden"
-                                  value={`menu-item-${item.id}`}
-                                />
-                                <button
-                                  className="h-9 rounded-md bg-[#20251f] px-4 text-sm font-semibold text-white transition hover:bg-[#3c4537]"
-                                  data-testid={`add-cart-${item.id}`}
-                                  type="submit"
+                                <CartActionForm
+                                  buttonClassName="button-primary min-w-20"
+                                  kind="add"
+                                  menuItemId={item.id}
+                                  scrollTarget={`menu-item-${item.id}`}
+                                  testId={`add-cart-${item.id}`}
                                 >
                                   담기
-                                </button>
-                              </form>
+                                </CartActionForm>
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-                  ))}
-                </div>
-              </article>
+                          ))}
+                        </div>
+                      </section>
+                    ))}
+                  </div>
+                </article>
               );
             })
           )}
         </section>
 
-        <aside className="lg:sticky lg:top-5 lg:self-start" id="order-panel">
-          <div className="rounded-lg border border-[#deddd4] bg-white p-5">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">주문</h2>
-              <span className="rounded-md bg-[#f0eee4] px-2 py-1 text-xs font-semibold text-[#5f665c]">
-                MVP
+        <aside className="lg:sticky lg:top-24 lg:self-start" id="order-panel">
+          <div className="panel p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="eyebrow">Cart</p>
+                <h2 className="mt-1 text-xl font-black">주문</h2>
+              </div>
+              <span className="rounded-lg bg-[var(--gold)] px-3 py-2 text-xs font-black text-[#6d5812]">
+                {cartItemCount}개
               </span>
             </div>
-            <p className="mt-2 text-sm text-[#62695f]">
+            <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
               {selectedRestaurant
                 ? `${selectedRestaurant.name} 메뉴만 보고 있습니다.`
                 : "전체 식당 메뉴를 보고 있습니다."}
             </p>
+
             {cartItemCount === 0 ? (
-              <div className="mt-5 rounded-md border border-dashed border-[#cbc9bd] p-4 text-sm leading-6 text-[#62695f]">
-                <p>아직 담은 메뉴가 없습니다.</p>
+              <div className="mt-5 rounded-lg border border-dashed border-[var(--line-strong)] bg-[var(--surface-soft)] p-4 text-sm leading-6 text-[var(--muted)]">
+                <p className="font-bold text-[var(--foreground)]">
+                  아직 담은 메뉴가 없습니다.
+                </p>
                 <p className="mt-1">먹고 싶은 메뉴를 선택해 담아보세요.</p>
               </div>
             ) : (
               <div className="mt-5 flex flex-col gap-4">
                 {orderError === "min-order" ? (
-                  <p className="rounded-md bg-[#fff1ef] px-3 py-2 text-sm text-[#a53622]">
+                  <p className="notice-danger">
                     최소주문금액을 채워야 주문할 수 있습니다.
                   </p>
                 ) : null}
                 {cartError === "different-restaurant" ? (
-                  <p className="rounded-md bg-[#fff1ef] px-3 py-2 text-sm text-[#a53622]">
+                  <p className="notice-danger">
                     한 번에 한 식당 메뉴만 담을 수 있습니다. 기존 식당
                     장바구니를 비운 뒤 다른 식당 메뉴를 담아주세요.
                   </p>
                 ) : null}
                 {hasMultipleRestaurantCarts ? (
-                  <p className="rounded-md bg-[#fff1ef] px-3 py-2 text-sm text-[#a53622]">
+                  <p className="notice-danger">
                     여러 식당 장바구니가 있습니다. 한 식당만 남기고 모두
                     취소해야 주문할 수 있습니다.
                   </p>
@@ -368,179 +483,130 @@ export default async function Home({ searchParams }: HomeProps) {
 
                 {cartSummaries.map(
                   ({ cart, minOrderAmount, remainingAmount, subtotalAmount }) => (
-                  <section
-                    className="rounded-md border border-[#e4e2d7] p-4"
-                    id={`cart-${cart.id}`}
-                    key={cart.id}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold">{cart.restaurant.name}</p>
-                        <p className="mt-1 text-xs text-[#62695f]">
-                          배달비 {formatPrice(cart.restaurant.deliveryFee)}원
-                        </p>
-                      </div>
-                      <form
-                        action={clearCartAction}
-                        data-scroll-anchor="#order-panel"
-                        data-preserve-scroll="true"
-                      >
-                        <input name="cartId" type="hidden" value={cart.id} />
-                        <input
-                          name="scrollTarget"
-                          type="hidden"
-                          value="order-panel"
-                        />
-                        <button
-                          className="text-xs font-semibold text-[#8a3a29] underline-offset-2 hover:underline"
-                          type="submit"
+                    <section
+                      className="border-t border-[var(--line)] pt-4 first:border-t-0 first:pt-0"
+                      id={`cart-${cart.id}`}
+                      key={cart.id}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-black">{cart.restaurant.name}</p>
+                          <p className="mt-1 text-xs font-semibold text-[var(--muted)]">
+                            배달비 {formatPrice(cart.restaurant.deliveryFee)}원
+                          </p>
+                        </div>
+                        <CartActionForm
+                          buttonClassName="button-danger min-h-8 px-3"
+                          cartId={cart.id}
+                          kind="clear"
+                          scrollTarget="order-panel"
                         >
                           모두 취소
-                        </button>
-                      </form>
-                    </div>
+                        </CartActionForm>
+                      </div>
 
-                    <div className="mt-3 flex flex-col gap-3">
-                      {cart.items.map((item) => (
-                        <div
-                          className="grid grid-cols-[1fr_auto] gap-3 border-t border-[#eeeade] pt-3"
-                          id={`cart-item-${item.id}`}
-                          key={item.id}
-                        >
-                          <div>
-                            <p className="text-sm font-semibold">
-                              {item.menuItem.name}
-                            </p>
-                            <p className="mt-1 text-xs text-[#62695f]">
-                              {formatPrice(item.unitPrice)}원 × {item.quantity}
-                            </p>
-                          </div>
-                          <div className="flex flex-col items-end gap-2">
-                            <p className="text-sm font-semibold">
-                              {formatPrice(
-                                getCartLineTotal(item.unitPrice, item.quantity),
-                              )}
-                              원
-                            </p>
-                            <div className="flex h-8 items-center overflow-hidden rounded-md border border-[#c9c7ba] bg-white">
-                              <form
-                                action={decrementCartItemAction}
-                                data-scroll-anchor="#order-panel"
-                                data-preserve-scroll="true"
-                              >
-                                <input
-                                  name="cartItemId"
-                                  type="hidden"
-                                  value={item.id}
-                                />
-                                <input
-                                  name="scrollTarget"
-                                  type="hidden"
-                                  value="order-panel"
-                                />
-                                <button
-                                  aria-label={`${item.menuItem.name} 수량 줄이기`}
-                                  className="flex h-8 w-8 items-center justify-center text-base font-semibold text-[#4d5549] transition hover:bg-[#effaff]"
-                                  data-testid={`decrement-cart-${item.id}`}
-                                  type="submit"
+                      <div className="mt-3 flex flex-col gap-3">
+                        {cart.items.map((item) => (
+                          <div
+                            className="grid grid-cols-[1fr_auto] gap-3 rounded-lg bg-[var(--surface-soft)] p-3"
+                            id={`cart-item-${item.id}`}
+                            key={item.id}
+                          >
+                            <div className="min-w-0">
+                              <p className="text-sm font-black">
+                                {item.menuItem.name}
+                              </p>
+                              <p className="mt-1 text-xs text-[var(--muted)]">
+                                {formatPrice(item.unitPrice)}원 × {item.quantity}
+                              </p>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                              <p className="text-sm font-black">
+                                {formatPrice(
+                                  getCartLineTotal(
+                                    item.unitPrice,
+                                    item.quantity,
+                                  ),
+                                )}
+                                원
+                              </p>
+                              <div className="quantity-control">
+                                <CartActionForm
+                                  ariaLabel={`${item.menuItem.name} 수량 줄이기`}
+                                  buttonClassName="quantity-button"
+                                  cartItemId={item.id}
+                                  kind="decrement"
+                                  scrollTarget="order-panel"
+                                  testId={`decrement-cart-${item.id}`}
                                 >
                                   -
-                                </button>
-                              </form>
-                              <span className="flex h-8 min-w-8 items-center justify-center border-x border-[#d8d3c5] px-2 text-sm font-semibold">
-                                {item.quantity}
-                              </span>
-                              <form
-                                action={addCartItemAction}
-                                data-scroll-anchor={`#cart-item-${item.id}`}
-                                data-preserve-scroll="true"
-                              >
-                                <input
-                                  name="menuItemId"
-                                  type="hidden"
-                                  value={item.menuItemId}
-                                />
-                                <input
-                                  name="scrollTarget"
-                                  type="hidden"
-                                  value={`cart-item-${item.id}`}
-                                />
-                                <button
-                                  aria-label={`${item.menuItem.name} 수량 늘리기`}
-                                  className="flex h-8 w-8 items-center justify-center text-base font-semibold text-[#4d5549] transition hover:bg-[#effaff]"
-                                  data-testid={`increment-cart-${item.id}`}
-                                  type="submit"
+                                </CartActionForm>
+                                <span className="quantity-value">
+                                  {item.quantity}
+                                </span>
+                                <CartActionForm
+                                  ariaLabel={`${item.menuItem.name} 수량 늘리기`}
+                                  buttonClassName="quantity-button"
+                                  kind="add"
+                                  menuItemId={item.menuItemId}
+                                  scrollTarget={`cart-item-${item.id}`}
+                                  testId={`increment-cart-${item.id}`}
                                 >
                                   +
-                                </button>
-                              </form>
-                            </div>
-                            <form
-                              action={removeCartItemAction}
-                              data-scroll-anchor="#order-panel"
-                              data-preserve-scroll="true"
-                            >
-                              <input
-                                name="cartItemId"
-                                type="hidden"
-                                value={item.id}
-                              />
-                              <input
-                                name="scrollTarget"
-                                type="hidden"
-                                value="order-panel"
-                              />
-                              <button
-                                className="text-xs font-semibold text-[#8a3a29] underline-offset-2 hover:underline"
-                                data-testid={`remove-cart-${item.id}`}
-                                type="submit"
+                                </CartActionForm>
+                              </div>
+                              <CartActionForm
+                                buttonClassName="text-xs font-black text-[var(--danger)] underline-offset-2 hover:underline"
+                                cartItemId={item.id}
+                                kind="remove"
+                                scrollTarget="order-panel"
+                                testId={`remove-cart-${item.id}`}
                               >
                                 취소
-                              </button>
-                            </form>
+                              </CartActionForm>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
 
-                    <div className="mt-4 rounded-md bg-[#f7f7f4] p-3 text-xs leading-5 text-[#62695f]">
-                      <div className="flex justify-between">
-                        <span>이 식당 메뉴 합계</span>
-                        <span className="font-semibold text-[#20231f]">
-                          {formatPrice(subtotalAmount)}원
-                        </span>
+                      <div className="summary-box mt-4 text-xs leading-5 text-[var(--muted)]">
+                        <div className="flex justify-between">
+                          <span>이 식당 메뉴 합계</span>
+                          <span className="font-black text-[var(--foreground)]">
+                            {formatPrice(subtotalAmount)}원
+                          </span>
+                        </div>
+                        <div className="mt-1 flex justify-between">
+                          <span>최소주문금액</span>
+                          <span>{formatPrice(minOrderAmount)}원</span>
+                        </div>
+                        {remainingAmount > 0 ? (
+                          <p className="mt-2 font-black text-[var(--danger)]">
+                            {formatPrice(remainingAmount)}원 더 담아야 주문할 수
+                            있습니다.
+                          </p>
+                        ) : (
+                          <p className="notice-good mt-2">
+                            최소주문금액을 채웠습니다.
+                          </p>
+                        )}
                       </div>
-                      <div className="mt-1 flex justify-between">
-                        <span>최소주문금액</span>
-                        <span>{formatPrice(minOrderAmount)}원</span>
-                      </div>
-                      {remainingAmount > 0 ? (
-                        <p className="mt-2 font-semibold text-[#8a3a29]">
-                          {formatPrice(remainingAmount)}원 더 담아야 주문할 수
-                          있습니다.
-                        </p>
-                      ) : (
-                        <p className="mt-2 font-semibold text-[#3e493a]">
-                          최소주문금액을 채웠습니다.
-                        </p>
-                      )}
-                    </div>
-                  </section>
+                    </section>
                   ),
                 )}
 
-                <div className="rounded-md bg-[#f0eee4] p-4 text-sm">
+                <div className="summary-box text-sm">
                   <div className="flex justify-between">
                     <span>메뉴 합계</span>
-                    <span className="font-semibold">
+                    <span className="font-black">
                       {formatPrice(cartSubtotal)}원
                     </span>
                   </div>
-                  <div className="mt-2 flex justify-between text-[#62695f]">
+                  <div className="mt-2 flex justify-between text-[var(--muted)]">
                     <span>배달비</span>
                     <span>{formatPrice(cartDeliveryFee)}원</span>
                   </div>
-                  <div className="mt-3 flex justify-between border-t border-[#d8d3c5] pt-3 text-base font-semibold">
+                  <div className="mt-3 flex justify-between border-t border-[var(--line-strong)] pt-3 text-base font-black">
                     <span>예상 결제금액</span>
                     <span>{formatPrice(cartSubtotal + cartDeliveryFee)}원</span>
                   </div>
@@ -548,7 +614,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
                 <form action="/checkout" method="get">
                   <button
-                    className="h-11 w-full rounded-md bg-[#20251f] text-sm font-semibold text-white transition hover:bg-[#3c4537] disabled:cursor-not-allowed disabled:bg-[#9aa196]"
+                    className="button-primary h-12 w-full"
                     disabled={!canPlaceOrder}
                     type="submit"
                   >

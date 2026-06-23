@@ -35,11 +35,56 @@ type SeedRestaurantInput = {
     items: Array<{
       name: string;
       description?: string;
+      imageUrl?: string;
       price: number;
       sortOrder: number;
     }>;
   }>;
 };
+
+function getSeedMenuImage(name: string) {
+  const menuImages: Record<string, string> = {
+    "후라이드 치킨": "/images/menu-items/fried-chicken.webp",
+    "양념 치킨": "/images/menu-items/yangnyeom-chicken.webp",
+    "간장마늘 치킨": "/images/menu-items/soy-garlic-chicken.webp",
+    "매콤 청양 치킨": "/images/menu-items/spicy-cheongyang-chicken.webp",
+    "순살 반반 치킨": "/images/menu-items/half-half-boneless-chicken.webp",
+    "허니버터 순살": "/images/menu-items/honey-butter-boneless.webp",
+    "감자튀김": "/images/menu-items/french-fries.webp",
+    "치즈볼 6개": "/images/menu-items/cheese-balls.webp",
+    "닭껍질 튀김": "/images/menu-items/fried-chicken-skin.webp",
+    "콘샐러드": "/images/menu-items/corn-salad.webp",
+    "콜라 500ml": "/images/menu-items/cola-500ml.webp",
+    "사이다 500ml": "/images/menu-items/cider-500ml.webp",
+    "제로콜라 500ml": "/images/menu-items/zero-cola-500ml.webp",
+    "국물 떡볶이": "/images/menu-items/soupy-tteokbokki.webp",
+    "로제 떡볶이": "/images/menu-items/rose-tteokbokki.webp",
+    "치즈 라볶이": "/images/menu-items/cheese-rabokki.webp",
+    "참치 김밥": "/images/menu-items/tuna-kimbap.webp",
+    "소고기 김밥": "/images/menu-items/beef-kimbap.webp",
+    "찰순대": "/images/menu-items/sundae.webp",
+    "모듬 튀김": "/images/menu-items/assorted-tempura.webp",
+    "김말이 튀김": "/images/menu-items/gimmari-tempura.webp",
+    "오징어 튀김": "/images/menu-items/squid-tempura.webp",
+    "고구마 튀김": "/images/menu-items/sweet-potato-tempura.webp",
+    "쿨피스 복숭아": "/images/menu-items/peach-coolpis.webp",
+    "캔 식혜": "/images/menu-items/canned-sikhye.webp",
+    "제육 도시락": "/images/menu-items/jeyuk-dosirak.webp",
+    "불고기 도시락": "/images/menu-items/bulgogi-dosirak.webp",
+    "수제 돈까스 도시락": "/images/menu-items/pork-cutlet-dosirak.webp",
+    "치킨마요 도시락": "/images/menu-items/chicken-mayo-dosirak.webp",
+    "연어구이 도시락": "/images/menu-items/grilled-salmon-dosirak.webp",
+    "소고기 비빔밥 도시락": "/images/menu-items/beef-bibimbap-dosirak.webp",
+    "된장국": "/images/menu-items/doenjang-soup.webp",
+    "김치찌개": "/images/menu-items/kimchi-jjigae.webp",
+    "소고기 미역국": "/images/menu-items/beef-seaweed-soup.webp",
+    "육개장": "/images/menu-items/yukgaejang.webp",
+    "계란말이 추가": "/images/menu-items/rolled-omelet.webp",
+    "메추리알 장조림": "/images/menu-items/quail-egg-jangjorim.webp",
+  };
+
+  return menuImages[name] ?? "/images/auth-food-spread.png";
+}
 
 async function seedRestaurant(input: SeedRestaurantInput) {
   const restaurant = await prisma.restaurant.upsert({
@@ -116,6 +161,7 @@ async function seedRestaurant(input: SeedRestaurantInput) {
         update: {
           categoryId: category.id,
           description: item.description ?? null,
+          imageUrl: item.imageUrl ?? getSeedMenuImage(item.name),
           price: item.price,
           isAvailable: true,
           sortOrder: item.sortOrder,
@@ -125,6 +171,7 @@ async function seedRestaurant(input: SeedRestaurantInput) {
           categoryId: category.id,
           name: item.name,
           description: item.description,
+          imageUrl: item.imageUrl ?? getSeedMenuImage(item.name),
           price: item.price,
           sortOrder: item.sortOrder,
         },
@@ -410,6 +457,7 @@ async function main() {
       update: {
         categoryId: item.categoryId,
         description: item.description,
+        imageUrl: getSeedMenuImage(item.name),
         price: item.price,
         isAvailable: true,
         sortOrder: item.sortOrder,
@@ -419,6 +467,7 @@ async function main() {
         categoryId: item.categoryId,
         name: item.name,
         description: item.description,
+        imageUrl: getSeedMenuImage(item.name),
         price: item.price,
         sortOrder: item.sortOrder,
       },

@@ -4,6 +4,7 @@ import {
   canCancelOrderStatus,
   getOrderStatusStepIndex,
   getOrderStatusLabel,
+  getPaymentMethodLabel,
   getPaymentStatusLabel,
   orderStatusSteps,
 } from "@/app/orders/order-labels";
@@ -55,24 +56,19 @@ export default async function OrderDetailPage({
   const isCancelled = order.status === "CANCELLED";
 
   return (
-    <main className="min-h-screen bg-[#f7f7f4] px-5 py-8 text-[#20231f]">
-      <section className="mx-auto flex max-w-4xl flex-col gap-5">
+    <main className="app-screen px-4 py-6 sm:px-6">
+      <section className="mx-auto flex max-w-5xl flex-col gap-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[#66715f]">
-              주문 상세
-            </p>
-            <h1 className="mt-1 text-3xl font-semibold">{order.orderNumber}</h1>
-            <p className="mt-2 text-sm text-[#62695f]">
+            <p className="eyebrow">주문 상세</p>
+            <h1 className="mt-1 text-3xl font-black">{order.orderNumber}</h1>
+            <p className="mt-2 text-sm text-[var(--muted)]">
               {formatDate(order.orderedAt)} · {order.restaurant.name}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <form action={`/orders/${order.orderNumber}`} method="get">
-              <button
-                className="h-10 rounded-md border border-[#c9c7ba] px-4 text-sm font-semibold transition hover:bg-[#f0eee4]"
-                type="submit"
-              >
+              <button className="button-secondary" type="submit">
                 다시 불러오기
               </button>
             </form>
@@ -89,37 +85,34 @@ export default async function OrderDetailPage({
                   value={`/orders/${order.orderNumber}`}
                 />
                 <button
-                  className="h-10 rounded-md border border-[#d3aaa0] px-4 text-sm font-semibold text-[#8a3a29] transition hover:bg-[#fff1ef]"
+                  className="button-danger"
                   type="submit"
                 >
                   주문 취소
                 </button>
               </form>
             ) : null}
-            <Link
-              className="inline-flex h-10 items-center rounded-md border border-[#c9c7ba] px-4 text-sm font-semibold transition hover:bg-[#f0eee4]"
-              href="/orders"
-            >
+            <Link className="button-secondary" href="/orders">
               목록으로
             </Link>
           </div>
         </div>
 
-        <section className="rounded-lg border border-[#deddd4] bg-white p-5">
-          <div className="flex flex-col gap-3 border-b border-[#e4e2d7] pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <section className="panel p-5">
+          <div className="flex flex-col gap-3 border-b border-[var(--line)] pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-xl font-semibold">주문 상태</h2>
-              <p className="mt-1 text-sm text-[#62695f]">
+              <h2 className="text-xl font-black">주문 상태</h2>
+              <p className="mt-1 text-sm text-[var(--muted)]">
                 최근 이력: {order.statusEvents[0]?.message ?? "주문 생성"}
               </p>
             </div>
-            <span className="w-fit rounded-md bg-[#eef3e8] px-3 py-2 text-sm font-semibold text-[#3e493a]">
+            <span className="w-fit rounded-lg bg-[var(--mint)] px-3 py-2 text-sm font-black text-[#256347]">
               {getOrderStatusLabel(order.status)}
             </span>
           </div>
 
           {isCancelled ? (
-            <p className="mt-5 rounded-md bg-[#fff1ef] px-3 py-2 text-sm font-semibold text-[#8a3a29]">
+            <p className="notice-danger mt-5">
               이 주문은 취소되었습니다.
             </p>
           ) : null}
@@ -132,10 +125,10 @@ export default async function OrderDetailPage({
               return (
                 <div
                   className={[
-                    "rounded-md border p-4",
+                    "rounded-lg border p-4",
                     isActive
-                      ? "border-[#8d9b7f] bg-[#eef3e8]"
-                      : "border-[#e4e2d7] bg-[#fafaf7]",
+                      ? "border-[var(--line-strong)] bg-[var(--mint)]"
+                      : "border-[var(--line)] bg-[var(--surface-soft)]",
                   ].join(" ")}
                   key={step.value}
                 >
@@ -144,22 +137,22 @@ export default async function OrderDetailPage({
                       className={[
                         "flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold",
                         isActive
-                          ? "bg-[#20251f] text-white"
-                          : "bg-[#e8e5d8] text-[#62695f]",
+                          ? "bg-[var(--brand)] text-white"
+                          : "bg-white text-[var(--muted)]",
                       ].join(" ")}
                     >
                       {index + 1}
                     </span>
                     <div>
-                      <p className="font-semibold">{step.label}</p>
+                      <p className="font-black">{step.label}</p>
                       {isCurrent ? (
-                        <p className="mt-1 text-xs font-semibold text-[#66715f]">
+                        <p className="mt-1 text-xs font-black text-[var(--brand-dark)]">
                           현재 상태
                         </p>
                       ) : null}
                     </div>
                   </div>
-                  <p className="mt-3 text-sm leading-6 text-[#62695f]">
+                  <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
                     {step.description}
                   </p>
                 </div>
@@ -183,10 +176,10 @@ export default async function OrderDetailPage({
                 return (
                   <button
                     className={[
-                      "h-10 rounded-md px-4 text-sm font-semibold transition",
+                      "button-primary",
                       isSelected
-                        ? "border border-[#d8d3c5] bg-[#f0eee4] text-[#7d8378]"
-                        : "bg-[#20251f] text-white hover:bg-[#3c4537]",
+                        ? "button-soft"
+                        : "",
                     ].join(" ")}
                     disabled={isSelected}
                     key={step.value}
@@ -202,10 +195,10 @@ export default async function OrderDetailPage({
           ) : null}
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-md bg-[#f7f7f4] p-4">
-              <p className="text-sm font-semibold text-[#66715f]">배송지</p>
-              <p className="mt-2 font-semibold">{order.deliveryRecipient}</p>
-              <p className="mt-1 text-sm leading-6 text-[#62695f]">
+            <div className="summary-box">
+              <p className="text-sm font-black text-[var(--brand-dark)]">배송지</p>
+              <p className="mt-2 font-black">{order.deliveryRecipient}</p>
+              <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
                 {order.deliveryPhone}
                 <br />
                 {order.deliveryAddressLine1}
@@ -217,19 +210,19 @@ export default async function OrderDetailPage({
                   : ""}
               </p>
               {order.deliveryMemo ? (
-                <p className="mt-2 text-sm text-[#62695f]">
+                <p className="mt-2 text-sm text-[var(--muted)]">
                   요청사항: {order.deliveryMemo}
                 </p>
               ) : null}
             </div>
 
-            <div className="rounded-md bg-[#f7f7f4] p-4">
-              <p className="text-sm font-semibold text-[#66715f]">결제</p>
-              <p className="mt-2 font-semibold">
+            <div className="summary-box">
+              <p className="text-sm font-black text-[var(--brand-dark)]">결제</p>
+              <p className="mt-2 font-black">
                 {getPaymentStatusLabel(payment?.status ?? "PENDING")}
               </p>
-              <p className="mt-1 text-sm leading-6 text-[#62695f]">
-                결제수단: {payment?.method ?? "MOCK"}
+              <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+                결제수단: {getPaymentMethodLabel(payment?.method ?? "MOCK")}
                 <br />
                 결제금액: {formatPrice(payment?.amount ?? order.totalAmount)}원
               </p>
@@ -237,50 +230,50 @@ export default async function OrderDetailPage({
           </div>
         </section>
 
-        <section className="rounded-lg border border-[#deddd4] bg-white p-5">
-          <h2 className="text-xl font-semibold">주문 메뉴</h2>
+        <section className="panel p-5">
+          <h2 className="text-xl font-black">주문 메뉴</h2>
           <div className="mt-4 flex flex-col gap-3">
             {order.items.map((item) => (
               <div
-                className="grid grid-cols-[1fr_auto] gap-3 border-b border-[#eeeade] pb-3 text-sm last:border-b-0 last:pb-0"
+                className="grid grid-cols-[1fr_auto] gap-3 border-b border-[var(--line)] pb-3 text-sm last:border-b-0 last:pb-0"
                 key={item.id}
               >
                 <div>
-                  <p className="font-semibold">{item.menuItemName}</p>
-                  <p className="mt-1 text-[#62695f]">
+                  <p className="font-black">{item.menuItemName}</p>
+                  <p className="mt-1 text-[var(--muted)]">
                     {formatPrice(item.unitPrice)}원 × {item.quantity}
                   </p>
                 </div>
-                <p className="font-semibold">{formatPrice(item.lineTotal)}원</p>
+                <p className="font-black">{formatPrice(item.lineTotal)}원</p>
               </div>
             ))}
           </div>
 
-          <div className="mt-5 rounded-md bg-[#f0eee4] p-4 text-sm">
+          <div className="summary-box mt-5 text-sm">
             <div className="flex justify-between">
               <span>메뉴 합계</span>
               <span>{formatPrice(order.subtotalAmount)}원</span>
             </div>
-            <div className="mt-2 flex justify-between text-[#62695f]">
+            <div className="mt-2 flex justify-between text-[var(--muted)]">
               <span>배달비</span>
               <span>{formatPrice(order.deliveryFee)}원</span>
             </div>
-            <div className="mt-3 flex justify-between border-t border-[#d8d3c5] pt-3 text-base font-semibold">
+            <div className="mt-3 flex justify-between border-t border-[var(--line-strong)] pt-3 text-base font-black">
               <span>총액</span>
               <span>{formatPrice(order.totalAmount)}원</span>
             </div>
           </div>
         </section>
 
-        <section className="rounded-lg border border-[#deddd4] bg-white p-5">
-          <h2 className="text-xl font-semibold">상태 이력</h2>
+        <section className="panel p-5">
+          <h2 className="text-xl font-black">상태 이력</h2>
           <div className="mt-4 flex flex-col gap-3">
             {order.statusEvents.map((event) => (
               <div
-                className="grid gap-1 border-b border-[#eeeade] pb-3 text-sm last:border-b-0 last:pb-0 sm:grid-cols-[160px_1fr]"
+                className="grid gap-1 border-b border-[var(--line)] pb-3 text-sm last:border-b-0 last:pb-0 sm:grid-cols-[160px_1fr]"
                 key={event.id}
               >
-                <p className="font-semibold text-[#66715f]">
+                <p className="font-black text-[var(--brand-dark)]">
                   {formatDate(event.createdAt)}
                 </p>
                 <p>

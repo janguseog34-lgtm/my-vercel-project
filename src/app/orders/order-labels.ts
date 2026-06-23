@@ -66,3 +66,13 @@ export function getPaymentStatusLabel(status: string) {
 
   return labels[status] ?? status;
 }
+
+export function getPaymentMethodLabel(method: string) {
+  const labels: Record<string, string> = {
+    CARD: "카드 결제",
+    CASH: "현금 결제",
+    MOCK: "앱 테스트 결제",
+  };
+
+  return labels[method] ?? method;
+}

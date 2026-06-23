@@ -32,40 +32,32 @@ export default async function OrdersPage() {
   const orders = await listOrdersForUser(currentUser.id);
 
   return (
-    <main className="min-h-screen bg-[#f7f7f4] px-5 py-8 text-[#20231f]">
-      <section className="mx-auto flex max-w-4xl flex-col gap-5">
+    <main className="app-screen px-4 py-6 sm:px-6">
+      <section className="mx-auto flex max-w-5xl flex-col gap-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[#66715f]">
-              동네한끼
-            </p>
-            <h1 className="mt-1 text-3xl font-semibold">주문 내역</h1>
-            <p className="mt-2 text-sm text-[#62695f]">
+            <p className="eyebrow">모락한끼</p>
+            <h1 className="mt-1 text-3xl font-black">주문 내역</h1>
+            <p className="mt-2 text-sm text-[var(--muted)]">
               저장된 주문 {orders.length}건을 데이터베이스에서 불러왔습니다.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <form action="/orders" method="get">
-              <button
-                className="h-10 rounded-md border border-[#c9c7ba] px-4 text-sm font-semibold transition hover:bg-[#f0eee4]"
-                type="submit"
-              >
+              <button className="button-secondary" type="submit">
                 다시 불러오기
               </button>
             </form>
-            <Link
-              className="inline-flex h-10 items-center rounded-md border border-[#c9c7ba] px-4 text-sm font-semibold transition hover:bg-[#f0eee4]"
-              href="/"
-            >
+            <Link className="button-secondary" href="/">
               메뉴로 돌아가기
             </Link>
           </div>
         </div>
 
         {orders.length === 0 ? (
-          <div className="rounded-lg border border-[#deddd4] bg-white p-6">
-            <h2 className="text-xl font-semibold">아직 주문이 없습니다</h2>
-            <p className="mt-2 text-sm text-[#62695f]">
+          <div className="panel p-6">
+            <h2 className="text-xl font-black">아직 주문이 없습니다</h2>
+            <p className="mt-2 text-sm text-[var(--muted)]">
               메뉴를 장바구니에 담고 주문하면 이곳에 저장됩니다.
             </p>
           </div>
@@ -76,22 +68,22 @@ export default async function OrdersPage() {
 
               return (
                 <article
-                  className="rounded-lg border border-[#deddd4] bg-white p-5"
+                  className="panel p-5"
                   key={order.id}
                 >
-                <div className="flex flex-col gap-3 border-b border-[#e4e2d7] pb-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex flex-col gap-3 border-b border-[var(--line)] pb-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-[#66715f]">
+                    <p className="text-sm font-bold text-[var(--brand-dark)]">
                       {order.orderNumber}
                     </p>
-                    <h2 className="mt-1 text-xl font-semibold">
+                    <h2 className="mt-1 text-xl font-black">
                       {order.restaurant.name}
                     </h2>
-                    <p className="mt-1 text-sm text-[#62695f]">
+                    <p className="mt-1 text-sm text-[var(--muted)]">
                       {formatDate(order.orderedAt)}
                     </p>
                   </div>
-                  <span className="w-fit rounded-md bg-[#eef3e8] px-3 py-2 text-sm font-semibold text-[#3e493a]">
+                  <span className="w-fit rounded-lg bg-[var(--mint)] px-3 py-2 text-sm font-black text-[#256347]">
                     {getOrderStatusLabel(order.status)}
                   </span>
                 </div>
@@ -103,34 +95,34 @@ export default async function OrdersPage() {
                       key={item.id}
                     >
                       <div>
-                        <p className="font-semibold">{item.menuItemName}</p>
-                        <p className="mt-1 text-[#62695f]">
+                        <p className="font-black">{item.menuItemName}</p>
+                        <p className="mt-1 text-[var(--muted)]">
                           {formatPrice(item.unitPrice)}원 × {item.quantity}
                         </p>
                       </div>
-                      <p className="font-semibold">
+                      <p className="font-black">
                         {formatPrice(item.lineTotal)}원
                       </p>
                     </div>
                   ))}
                 </div>
 
-                <div className="mt-4 rounded-md bg-[#f0eee4] p-4 text-sm">
+                <div className="summary-box mt-4 text-sm">
                   <div className="flex justify-between">
                     <span>메뉴 합계</span>
                     <span>{formatPrice(order.subtotalAmount)}원</span>
                   </div>
-                  <div className="mt-2 flex justify-between text-[#62695f]">
+                  <div className="mt-2 flex justify-between text-[var(--muted)]">
                     <span>배달비</span>
                     <span>{formatPrice(order.deliveryFee)}원</span>
                   </div>
-                  <div className="mt-3 flex justify-between border-t border-[#d8d3c5] pt-3 text-base font-semibold">
+                  <div className="mt-3 flex justify-between border-t border-[var(--line-strong)] pt-3 text-base font-black">
                     <span>총액</span>
                     <span>{formatPrice(order.totalAmount)}원</span>
                   </div>
                 </div>
 
-                <div className="mt-4 text-sm leading-6 text-[#62695f]">
+                <div className="mt-4 text-sm leading-6 text-[var(--muted)]">
                   <p>
                     배송지: {order.deliveryAddressLine1}
                     {order.deliveryAddressLine2
@@ -155,7 +147,7 @@ export default async function OrdersPage() {
                       />
                       <input name="returnTo" type="hidden" value="/orders" />
                       <button
-                        className="inline-flex h-10 items-center rounded-md border border-[#d3aaa0] px-4 text-sm font-semibold text-[#8a3a29] transition hover:bg-[#fff1ef]"
+                        className="button-danger"
                         type="submit"
                       >
                         주문 취소
@@ -163,7 +155,7 @@ export default async function OrdersPage() {
                     </form>
                   ) : null}
                   <Link
-                    className="inline-flex h-10 items-center rounded-md bg-[#20251f] px-4 text-sm font-semibold text-white transition hover:bg-[#3c4537]"
+                    className="button-primary"
                     href={`/orders/${order.orderNumber}`}
                   >
                     상세 보기

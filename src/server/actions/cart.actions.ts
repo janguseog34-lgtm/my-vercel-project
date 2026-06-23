@@ -24,9 +24,98 @@ function readScrollTarget(formData: FormData) {
 }
 
 function redirectHome(scrollTarget: string, search = "") {
-  const hash = scrollTarget ? `#${scrollTarget}` : "";
+  void scrollTarget;
+  redirect(`/${search}`);
+}
 
-  redirect(`/${search}${hash}`);
+export type CartActionResult = {
+  error?: "different-restaurant";
+  ok: boolean;
+};
+
+export async function addCartItemInlineAction(
+  formData: FormData,
+): Promise<CartActionResult> {
+  const currentUser = await getCurrentUser();
+
+  if (!currentUser) {
+    redirect("/login");
+  }
+
+  const menuItemId = readString(formData, "menuItemId");
+
+  if (menuItemId) {
+    try {
+      await addMenuItemToCart(currentUser.id, menuItemId);
+    } catch (error) {
+      if (error instanceof DifferentRestaurantCartError) {
+        revalidatePath("/");
+        return { error: "different-restaurant", ok: false };
+      }
+
+      throw error;
+    }
+  }
+
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function removeCartItemInlineAction(
+  formData: FormData,
+): Promise<CartActionResult> {
+  const currentUser = await getCurrentUser();
+
+  if (!currentUser) {
+    redirect("/login");
+  }
+
+  const cartItemId = readString(formData, "cartItemId");
+
+  if (cartItemId) {
+    await removeCartItem(currentUser.id, cartItemId);
+  }
+
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function decrementCartItemInlineAction(
+  formData: FormData,
+): Promise<CartActionResult> {
+  const currentUser = await getCurrentUser();
+
+  if (!currentUser) {
+    redirect("/login");
+  }
+
+  const cartItemId = readString(formData, "cartItemId");
+
+  if (cartItemId) {
+    await decrementCartItem(currentUser.id, cartItemId);
+  }
+
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function clearCartInlineAction(
+  formData: FormData,
+): Promise<CartActionResult> {
+  const currentUser = await getCurrentUser();
+
+  if (!currentUser) {
+    redirect("/login");
+  }
+
+  const cartId = readString(formData, "cartId");
+
+  if (cartId) {
+    await clearCart(currentUser.id, cartId);
+  }
+
+  revalidatePath("/");
+  return { ok: true };
 }
 
 export async function addCartItemAction(formData: FormData) {

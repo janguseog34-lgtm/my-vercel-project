@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { OrderStatus } from "@/generated/prisma/enums";
+import { OrderStatus, PaymentMethod } from "@/generated/prisma/enums";
 import { getCurrentUser } from "@/server/auth/current-user";
 import {
   cancelOrderForUser,
@@ -20,9 +20,12 @@ export type PlaceOrderFormState = {
   values?: {
     addressLine1?: string;
     addressLine2?: string;
+    customMemo?: string;
     memo?: string;
+    paymentMethod?: string;
     phone?: string;
     postalCode?: string;
+    requestOption?: string;
     recipientName?: string;
   };
 };
@@ -33,15 +36,39 @@ function readString(formData: FormData, key: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function createDeliveryMemo(requestOption: string, customMemo: string) {
+  const values = [requestOption, customMemo].filter(Boolean);
+
+  return values.length > 0 ? values.join(" / ") : "";
+}
+
 function readDeliveryAddress(formData: FormData) {
+  const requestOption = readString(formData, "requestOption");
+  const customMemo = readString(formData, "customMemo");
+
   return {
     addressLine1: readString(formData, "addressLine1"),
     addressLine2: readString(formData, "addressLine2"),
-    memo: readString(formData, "memo"),
+    customMemo,
+    memo: createDeliveryMemo(requestOption, customMemo),
+    paymentMethod: readString(formData, "paymentMethod"),
     phone: readString(formData, "phone"),
     postalCode: readString(formData, "postalCode"),
+    requestOption,
     recipientName: readString(formData, "recipientName"),
   };
+}
+
+function readPaymentMethod(value?: string) {
+  if (
+    value === PaymentMethod.CARD ||
+    value === PaymentMethod.CASH ||
+    value === PaymentMethod.MOCK
+  ) {
+    return value;
+  }
+
+  return PaymentMethod.CARD;
 }
 
 function toDeliveryAddressInput(
@@ -94,7 +121,11 @@ export async function placeOrderAction(
   let orders;
 
   try {
-    orders = await placeOrdersFromActiveCarts(currentUser.id, deliveryAddress);
+    orders = await placeOrdersFromActiveCarts(
+      currentUser.id,
+      deliveryAddress,
+      readPaymentMethod(values.paymentMethod),
+    );
   } catch (error) {
     if (error instanceof MinimumOrderAmountError) {
       revalidatePath("/");

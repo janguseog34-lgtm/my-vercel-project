@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "동네한끼",
+  title: "모락한끼",
   description: "Next.js delivery app with Prisma and PostgreSQL",
 };
 
