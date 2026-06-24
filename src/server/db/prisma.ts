@@ -14,7 +14,12 @@ function createPrismaClient() {
     throw new Error("DATABASE_URL is not configured.");
   }
 
-  const adapter = new PrismaPg({ connectionString });
+  const adapter = new PrismaPg({
+    connectionString,
+    ssl: {
+      rejectUnauthorized: false,
+    },
+  });
 
   return new PrismaClient({
     adapter,
@@ -30,4 +35,3 @@ export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
-
