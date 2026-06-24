@@ -71,6 +71,8 @@ export async function signUpAction(
 
     await setSessionCookie(token, session.expiresAt);
   } catch (error) {
+    console.error("Signup failed", error);
+
     if (isDuplicateEmailError(error)) {
       return {
         error: "이미 가입된 이메일입니다.",
@@ -107,7 +109,9 @@ export async function loginAction(
     const { authenticateUser } = await import("@/server/services/auth.service");
 
     user = await authenticateUser(email, password);
-  } catch {
+  } catch (error) {
+    console.error("Login authentication failed", error);
+
     return {
       error: "로그인 서버 연결에 문제가 생겼습니다. 잠시 후 다시 시도해주세요.",
       values: { email },
@@ -126,7 +130,9 @@ export async function loginAction(
     const { token, session } = await createUserSession(user.id);
 
     await setSessionCookie(token, session.expiresAt);
-  } catch {
+  } catch (error) {
+    console.error("Login session creation failed", error);
+
     return {
       error: "로그인 세션을 만드는 중 문제가 생겼습니다. 잠시 후 다시 시도해주세요.",
       values: { email },
