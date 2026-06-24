@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/server/db/prisma";
 
 export const runtime = "nodejs";
 
@@ -7,6 +6,8 @@ export async function GET() {
   const startedAt = Date.now();
 
   try {
+    const { prisma } = await import("@/server/db/prisma");
+
     await prisma.$queryRaw`SELECT 1`;
 
     return NextResponse.json({
@@ -26,4 +27,3 @@ export async function GET() {
     );
   }
 }
-

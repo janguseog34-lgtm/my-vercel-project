@@ -2,12 +2,6 @@
 
 import { redirect } from "next/navigation";
 import { clearSessionCookie, getSessionCookie, setSessionCookie } from "@/server/auth/cookies";
-import {
-  authenticateUser,
-  createUserSession,
-  registerUser,
-  revokeUserSession,
-} from "@/server/services/auth.service";
 
 export type AuthFormState = {
   error?: string;
@@ -64,6 +58,9 @@ export async function signUpAction(
   }
 
   try {
+    const { createUserSession, registerUser } = await import(
+      "@/server/services/auth.service"
+    );
     const user = await registerUser({
       email,
       nickname,
@@ -104,7 +101,18 @@ export async function loginAction(
     };
   }
 
-  const user = await authenticateUser(email, password);
+  let user;
+
+  try {
+    const { authenticateUser } = await import("@/server/services/auth.service");
+
+    user = await authenticateUser(email, password);
+  } catch {
+    return {
+      error: "로그인 서버 연결에 문제가 생겼습니다. 잠시 후 다시 시도해주세요.",
+      values: { email },
+    };
+  }
 
   if (!user) {
     return {
@@ -113,9 +121,18 @@ export async function loginAction(
     };
   }
 
-  const { token, session } = await createUserSession(user.id);
+  try {
+    const { createUserSession } = await import("@/server/services/auth.service");
+    const { token, session } = await createUserSession(user.id);
 
-  await setSessionCookie(token, session.expiresAt);
+    await setSessionCookie(token, session.expiresAt);
+  } catch {
+    return {
+      error: "로그인 세션을 만드는 중 문제가 생겼습니다. 잠시 후 다시 시도해주세요.",
+      values: { email },
+    };
+  }
+
   redirect("/");
 }
 
@@ -123,7 +140,13 @@ export async function logoutAction() {
   const token = await getSessionCookie();
 
   if (token) {
-    await revokeUserSession(token);
+    try {
+      const { revokeUserSession } = await import("@/server/services/auth.service");
+
+      await revokeUserSession(token);
+    } catch {
+      // Logging out should still clear the browser cookie even if the DB is unavailable.
+    }
   }
 
   await clearSessionCookie();

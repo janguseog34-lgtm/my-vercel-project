@@ -2,7 +2,6 @@ import "server-only";
 
 import { hashSessionToken } from "@/server/auth/session";
 import { getSessionCookie } from "@/server/auth/cookies";
-import { prisma } from "@/server/db/prisma";
 
 export async function getCurrentUser() {
   const token = await getSessionCookie();
@@ -11,14 +10,22 @@ export async function getCurrentUser() {
     return null;
   }
 
-  const session = await prisma.session.findUnique({
-    where: {
-      tokenHash: hashSessionToken(token),
-    },
-    include: {
-      user: true,
-    },
-  });
+  let session;
+
+  try {
+    const { prisma } = await import("@/server/db/prisma");
+
+    session = await prisma.session.findUnique({
+      where: {
+        tokenHash: hashSessionToken(token),
+      },
+      include: {
+        user: true,
+      },
+    });
+  } catch {
+    return null;
+  }
 
   if (!session || session.revokedAt || session.expiresAt <= new Date()) {
     return null;
@@ -26,4 +33,3 @@ export async function getCurrentUser() {
 
   return session.user;
 }
-
